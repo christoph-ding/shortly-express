@@ -42,7 +42,7 @@ var checkUser = function(req, res, next){
 };
 
 var hasher = function(password, next) {
-  var hash = bCrypt.hash(password,null, null, function(err, hash) {
+  var hash = bCrypt.hash(password,null, null, function(err, hash) {    
     next(hash);
   })
 }
@@ -51,21 +51,21 @@ var checkPassword = function(username, password, next) {
   hasher(password, function(hash) {
     //if the hash equal to username password
     // select password from users where username = username
+    console.log("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")    
+    console.log(username)
     new User({username : username})
       .fetch()
       .then(function(model) {
-        if (model.attributes.password === hash) {
-          console.log('passwords match')
-          console.log(model.attributes.password)
-          next(true);                    
-        } else {
-          console.log('they do not');
-          console.log(model.attributes.password)          
+        bCrypt.compare(model.attributes.password, hash, function(err, res) {
+          if (res) {
+            next(true);                                          
+          } else {
           next(false);         
         }
       })
-  })
-};
+    })
+  });
+}
 
 app.get('/sd', function(req, res, next){
   // check if cookie is a valid cookie === true
@@ -117,17 +117,22 @@ app.post('/signup', function(req, res) {
 app.post('/login',
   function(req, res) {
     checkUser(req, res, function(userExists) {
-      checkPassword(req.body.username, req.body.password, function(passMatch) {
-        if (passMatch) {
-          console.log('starting a new session')
-          // initialize a new session          
-          res.writeHeader(302, {Location: '/'})
-          res.end();
-        } else {
-          res.writeHeader(302, {Location: '/login'})          
-          res.end();
-        }
-      })
+      if (userExists) { 
+        checkPassword(req.body.username, req.body.password, function(passMatch) {
+          if (passMatch) {
+            console.log('starting a new session')
+            // initialize a new session          
+            res.writeHeader(302, {Location: '/'})
+            res.end();
+          } else {
+            res.writeHeader(302, {Location: '/login'})          
+            res.end();
+          }
+        })
+      } else {
+        res.writeHeader(302, {Location: '/login'});
+        res.end();
+      }
     })    
   }
 );
