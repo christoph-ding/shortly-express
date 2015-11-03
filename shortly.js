@@ -33,6 +33,27 @@ function(req, res) {
   res.render('index');
 });
 
+/////// Creating a new user
+app.post('/signup',
+function(req, res) {
+    console.log('INSIDE MAKING A NEW USER ROUTER')
+    console.log(req.body.username)
+    var newUser = new User({
+      'username': req.body.username,
+      'password': req.body.password,
+    }).save().then(function() {
+      console.log('hey what is happening')
+      db.knex('users').insert(newUser);
+    });
+    res.end();    
+  });
+
+app.post('/login',
+  function(req, res) {
+    res.end();
+  }
+);
+
 app.get('/links', 
 function(req, res) {
   Links.reset().fetch().then(function(links) {
