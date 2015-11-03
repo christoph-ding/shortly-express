@@ -84,14 +84,12 @@ app.get('/sd', function(req, res, next){
   res.send('You are admin');
 });
 
-app.get('/', checkUser, 
-function(req, res) {
+app.get('/', function(req, res) {
   res.render('index');
 });
 
-app.get('/create', checkUser,
-function(req, res) {
-  res.render('index');
+app.get('/signup', function(req, res) {
+  res.render('signup');
 });
 
 /////// Creating a new user
@@ -112,6 +110,11 @@ app.post('/signup', function(req, res) {
       /////// do something if the user already exists
       }
   });
+});
+
+/////////// Login
+app.get('/login', function(req,res) {
+  res.render('login')
 });
 
 app.post('/login',
