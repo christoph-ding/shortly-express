@@ -3,7 +3,8 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 
-
+// var sessions
+// app.use(sessions())
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
@@ -22,13 +23,40 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+var checkUser = function(req, res, next){
+  //... do somethingh
 
-app.get('/', 
+  // if it passes
+    // invoke next()
+  // else
+    // do something else with response object
+    // *redirect*
+  next();
+};
+
+app.get('/sd', function(req, res, next){
+  // check if cookie is a valid cookie === true
+    // go onto the next middleware
+    next();
+  // else
+    // res.send('your cookie is bad, sending you back to index.html')
+}, function(req, res, next){
+  // check it see if cookie is an admin
+    // if admin, go to next
+    next();
+  // else if not admin
+    // res.send('you are not admin, sending you back to index.html')
+}, function(req, res, next){
+  // 
+  res.send('You are admin');
+});
+
+app.get('/', checkUser, 
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', checkUser,
 function(req, res) {
   res.render('index');
 });
@@ -36,32 +64,35 @@ function(req, res) {
 /////// Creating a new user
 app.post('/signup',
 function(req, res) {
-    console.log('INSIDE MAKING A NEW USER ROUTER')
-    console.log(req.body.username)
+    console.log('INSIDE MAKING A NEW USER ROUTER');
+    console.log(req.body.username);
+    // hash the password
     var newUser = new User({
       'username': req.body.username,
-      'password': req.body.password,
-    }).save().then(function() {
-      console.log('hey what is happening')
-      db.knex('users').insert(newUser);
+      'password': req.body.password
     });
-    res.end();    
+
+    newUser.save().then(function(body) {
+      res.writeHeader(302)
+      res.send(body);    
+    });
+
   });
 
 app.post('/login',
   function(req, res) {
-    res.end();
+    res.end(); //retrieve user from username
   }
 );
 
-app.get('/links', 
+app.get('/links', checkUser,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links', checkUser,
 function(req, res) {
   var uri = req.body.url;
 
