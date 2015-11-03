@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 
 // var sessions
 // app.use(sessions())
+var bCrypt = require('bcrypt-nodejs')
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
@@ -23,15 +24,47 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-var checkUser = function(req, res, next){
-  //... do somethingh
+//////////////////////////////////////////
+////////Helper Functions
+/////////////////////////////////////////
 
-  // if it passes
-    // invoke next()
-  // else
-    // do something else with response object
-    // *redirect*
-  next();
+var checkUser = function(req, res, next){
+  // check our database, in table user
+  new User({username: req.body.username})
+    .fetch()    
+    .then(function(model) {
+      if (model) {      
+        next(true);      
+      } else {
+        next(false);    
+      }
+    }); 
+};
+
+var hasher = function(password, next) {
+  var hash = bCrypt.hash(password,null, null, function(err, hash) {
+    next(hash);
+  })
+}
+
+var checkPassword = function(username, password, next) {
+  hasher(password, function(hash) {
+    //if the hash equal to username password
+    // select password from users where username = username
+    new User({username : username})
+      .fetch()
+      .then(function(model) {
+        if (model.attributes.password === hash) {
+          console.log('passwords match')
+          console.log(model.attributes.password)
+          next(true);                    
+        } else {
+          console.log('they do not');
+          console.log(model.attributes.password)          
+          next(false);         
+        }
+      })
+  })
 };
 
 app.get('/sd', function(req, res, next){
@@ -62,26 +95,40 @@ function(req, res) {
 });
 
 /////// Creating a new user
-app.post('/signup',
-function(req, res) {
-    console.log('INSIDE MAKING A NEW USER ROUTER');
-    console.log(req.body.username);
-    // hash the password
-    var newUser = new User({
-      'username': req.body.username,
-      'password': req.body.password
-    });
-
-    newUser.save().then(function(body) {
-      res.writeHeader(302)
-      res.send(body);    
-    });
-
+app.post('/signup', function(req, res) {    
+    checkUser(req, res, function(userExists) {
+      if (!userExists) {
+        hasher(req.body.password, function(item) { 
+          var newUser = new User({
+            'username': req.body.username,
+            'password': item
+          }).save().then(function(body) {
+            // initialize a new session 
+            res.writeHeader(302, {Location: '/'})
+            res.end();        
+          });        
+        })
+      } else {
+      /////// do something if the user already exists
+      }
   });
+});
 
 app.post('/login',
   function(req, res) {
-    res.end(); //retrieve user from username
+    checkUser(req, res, function(userExists) {
+      checkPassword(req.body.username, req.body.password, function(passMatch) {
+        if (passMatch) {
+          console.log('starting a new session')
+          // initialize a new session          
+          res.writeHeader(302, {Location: '/'})
+          res.end();
+        } else {
+          res.writeHeader(302, {Location: '/login'})          
+          res.end();
+        }
+      })
+    })    
   }
 );
 

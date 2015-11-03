@@ -255,12 +255,9 @@ describe('', function() {
       };
 
       request(options, function(error, res, body) {
-        console.log('============================================================');
         db.knex('users')
           .where('username', '=', 'Svnh')                           
-          .then(function(body) {
-            console.log('++++++++++++++++++++++++++++++++++++++++++++++++');
-            console.log(res[0]);
+          .then(function(res) {
             if (res[0] && res[0]['username']) {
               var user = res[0]['username'];
             }
