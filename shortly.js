@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var cookieParse = require('cookie-parser');
 
 // var sessions
 // app.use(sessions())
@@ -23,6 +24,9 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+
+// for sessions
+app.use(cookieParse({secret: 'secret code'}));
 
 //////////////////////////////////////////
 ////////Helper Functions
@@ -67,26 +71,24 @@ var checkPassword = function(username, password, next) {
   });
 }
 
-app.get('/sd', function(req, res, next){
-  // check if cookie is a valid cookie === true
-    // go onto the next middleware
+app.get('/', function(req, res, next) {
+  // check if cookie is a valid cookie
+  console.log(req.cookies.remember)
+  if (!req.cookies.remember) {  
+    console.log("you don't have any cookies")
     next();
-  // else
-    // res.send('your cookie is bad, sending you back to index.html')
-}, function(req, res, next){
-  // check it see if cookie is an admin
-    // if admin, go to next
-    next();
-  // else if not admin
-    // res.send('you are not admin, sending you back to index.html')
-}, function(req, res, next){
-  // 
-  res.send('You are admin');
-});
+  } else {
+    console.log("you do have cookies!")    
+    res.writeHeader(302, {Location: '/'})          
+    res.end();
+  }
+}, 
+  function(req, res, next) {  
+    res.writeHeader(302, {Location: '/login'})          
+    res.end();
+  }
+);
 
-app.get('/', function(req, res) {
-  res.render('index');
-});
 
 app.get('/signup', function(req, res) {
   res.render('signup');
@@ -114,7 +116,7 @@ app.post('/signup', function(req, res) {
 
 /////////// Login
 app.get('/login', function(req,res) {
-  res.render('login')
+  res.render('login');
 });
 
 app.post('/login',
